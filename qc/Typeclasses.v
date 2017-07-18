@@ -711,7 +711,7 @@ Check {| lx:=2; ly:=4; label:="hello" |}.
 
 Set Printing All.
 Print Show.
-(* ==> 
+(* ==>
     Record Show (A : Type) : Type := 
       Build_Show
         { show : A -> string } 
@@ -1011,7 +1011,21 @@ Defined.
 (** Give instance declarations showing that, if [P] and [Q] are
     decidable propositions, then so are [~P] and [P\/Q]. *)
 
-(* FILL IN HERE *)
+Instance Dec_not {P} {H : Dec P} : Dec (~P).
+Proof.
+  constructor. unfold decidable.
+  destruct H as [D]; destruct D.
+  - right. intros C. contradiction.
+  - left. assumption.
+Qed.
+
+Instance Dec_disj {P Q} {H : Dec P} {I : Dec Q} : Dec (P \/ Q).
+Proof.
+  constructor. unfold decidable.
+  destruct H as [D]; destruct D;
+    destruct I as [D]; destruct D; auto.
+  right. intros C. destruct C; contradiction.
+Qed.
 (** [] *)
 
 (** **** Exercise: 4 stars: (Dec_All)  *)
@@ -1028,7 +1042,13 @@ Fixpoint All {T : Type} (P : T -> Prop) (l : list T) : Prop :=
 (** Create an instance of [Dec] for [All P l], given that [P a] is
     decidable for every [a]. *)
 
-(* FILL IN HERE *)
+Instance DecAll {T : Type} (P : T -> Prop) `(forall a, Dec (P a)) (l : list T) : Dec (All P l).
+Proof.
+  induction l; simpl.
+  - constructor. unfold decidable. left. auto.
+  - apply Dec_conj.
+Defined.
+
 (** [] *)
 
 (** One reason for doing all this is that it makes it easy to move
@@ -1268,6 +1288,9 @@ Fail Check (foo bool).
 (** **** Exercise: 1 star (debugDefaulting)  *)
 (** Do [Set Typeclasses Debug] and verify that this is what happened.  [] *)
 
+(* Set Typeclasses Debug. *)
+(* Definition foo x := if eqb x x then "Of course" else "Impossible". *)
+
 (* ================================================================= *)
 (** ** Manipulating the Hint Database *)
 
@@ -1496,6 +1519,8 @@ Definition e4 : list nat := mymap false.
     uncomment the above [Definition], and see what gets printed.  (You
     may want to do this from the command line rather than from inside
     an IDE.) *)
+
+(* It can repeatly apply MyMap_trans. *)
 
 (* ################################################################# *)
 (** * Alternative Structuring Mechanisms *)
