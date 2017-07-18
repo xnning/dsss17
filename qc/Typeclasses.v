@@ -1,4 +1,4 @@
-(** * Typeclasses: A Tutorial on Typeclasses in Coq *)
+(* * * Typeclasses: A Tutorial on Typeclasses in Coq *)
 
 Require Import Coq.Bool.Bool.
 Require Import Coq.Strings.String.
@@ -150,7 +150,14 @@ Compute (show 42).
 (** **** Exercise: 1 star (showNatBool)  *)
 (** Write a [Show] instance for pairs of a nat and a bool. *)
 
-(* FILL IN HERE *)
+Instance showNatBool : Show (nat * bool) :=
+  {
+    show :=
+      fun c:nat * bool =>
+        match c with
+        | (n, b) => "(" ++ show n ++ ", " ++ show b
+        end
+  }.
 (** [] *)
 
 (** Now, given the class [Show], we can define functions that use the
@@ -189,7 +196,11 @@ Compute (showTwo Red Green).
 (** **** Exercise: 1 star (missingConstraint)  *)
 (** What happens if we forget the class constraints in the definitions
     of [showOne] or [showTwo]?  Try deleting them and see what
-    happens.  [] *)
+    happens.
+
+"unable to satisfy the constaint: Show A"
+
+  [] *)
 
 (** Of course, [Show] is not the only interesting typeclass.  There
     are many other situations where it is useful to be able to
@@ -237,7 +248,12 @@ Instance eqNat : Eq nat :=
     checking equality makes perfect sense.  Write an [Eq] instance for
     this type. *)
 
-(* FILL IN HERE *)
+Instance eqBoolArrowBool : Eq (bool -> bool) :=
+  {
+    eqb := fun (b c : bool -> bool) =>
+          andb (eqb (b true) (c true))
+               (eqb (b false) (c false))
+  }.
 (** [] *)
 
 (* ================================================================= *)
@@ -286,7 +302,37 @@ Instance showList {A : Type} `{Show A} : Show (list A) :=
 (** Write an [Eq] instance for lists and [Show] and [Eq] instances for
     the [option] type constructor. *)
 
-(* FILL IN HERE *)
+Fixpoint eqListAux {A : Type} `{Eq A} (l1 l2 : list A) : bool :=
+  match (l1, l2) with
+  | (nil, nil) => true
+  | (cons h1 t1, cons h2 t2) => andb (eqb h1 h2) (eqListAux t1 t2)
+  | _ => false
+  end
+.
+
+Instance eqList {A : Type} `{Eq A} : Eq (list A) :=
+  {
+    eqb := eqListAux
+  }.
+
+Instance showOption {A : Type} `{Show A} : Show (option A) :=
+  {
+    show := fun (p : option A) =>
+              match p with
+              | None => "None"
+              | Some a => "Some " ++ show a
+              end
+  }.
+
+Instance eqOption {A : Type} `{Eq A} : Eq (option A) :=
+  {
+    eqb := fun (p1 p2 : option A) =>
+              match (p1, p2) with
+              | (None, None) => true
+              | (Some a1, Some a2) => eqb a1 a2
+              | _ => false
+              end
+  }.
 (** [] *)
 
 (** **** Exercise: 3 stars, optional (boolArrowA)  *)
@@ -294,7 +340,13 @@ Instance showList {A : Type} `{Show A} : Show (list A) :=
     an equality instance for any type of the form [bool->A], where [A]
     itself is an [Eq] type.  Show that it works for [bool->bool->nat]. *)
 
-(* FILL IN HERE *)
+Instance eqBoolArrowAny {A : Type} `{Eq A}: Eq (bool -> A) :=
+  {
+    eqb := fun (b c : bool -> A) =>
+          andb (eqb (b true) (c true))
+               (eqb (b false) (c false))
+  }.
+
 (** [] *)
 
 (* ================================================================= *)
@@ -357,13 +409,36 @@ Definition max {A: Type} `{Eq A} `{Ord A} (x y : A) : A :=
 (** **** Exercise: 3 stars (ordMisc)  *)
 (** Define [Ord] instances for options and pairs. *)
 
-(* FILL IN HERE *)
+Instance OrdMisc {A : Type} `{Ord A} : Ord (option A) :=
+  {
+    le := fun (p1 p2: option A) =>
+            match p1, p2 with
+            | Some _, None => false
+            | None, Some _ => true
+            | Some a, Some b => le a b
+            | None, None => true
+            end
+  }
+.
 (** [] *)
 
 (** **** Exercise: 3 stars (ordList)  *)
 (** For a little more practice, define an [Ord] instance for lists. *)
 
-(* FILL IN HERE *)
+Fixpoint OrdListAux {A : Type} `{Ord A} (l1 l2 : list A) : bool :=
+  match l1, l2 with
+  | cons _ _, nil => false
+  | nil, cons _ _ => true
+  | cons a1 b1, cons a2 b2 => orb (le a1 a2) (andb (eqb a1 a2) (OrdListAux b1 b2))
+  | _, _ => true
+  end
+.
+
+Instance OrdList {A : Type} `{Ord A} : Ord (list A) :=
+  {
+    le := OrdListAux
+  }
+.
 (** [] *)
 
 (* ################################################################# *)

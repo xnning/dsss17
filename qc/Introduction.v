@@ -82,7 +82,9 @@ Fixpoint insert x l :=
     always yields a list containing [x]."  Make sure QuickChick finds
     a counterexample. *)
 
-(* FILL IN HERE *)
+Conjecture insertP : forall x l,  (In x (insert x l)).
+
+QuickChick insertP.
 (** [] *)
 
 (** **** Exercise: 3 stars (insert2)  *)
@@ -92,7 +94,9 @@ Fixpoint insert x l :=
     using just what we've seen, though it's arguably not the best
     way.) *)
 
-(* FILL IN HERE *)
+Conjecture insertP2 : forall x l y, In y l ->  (In y (insert x l)).
+
+QuickChick insertP2.
 (** [] *)
 
 (* ################################################################# *)
