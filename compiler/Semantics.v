@@ -136,21 +136,28 @@ Remark irred_SKIP:
   forall st, irred cstep (SKIP, st).
 Proof.
   unfold irred; intros st st' STEP.
-  (* FILL IN HERE *)
-Admitted.
+  inversion STEP.
+Qed.
 
 Lemma terminates_unique:
   forall c st st1 st2, terminates c st st1 -> terminates c st st2 -> st1 = st2.
 Proof.
-  unfold terminates; intros. 
-  (* FILL IN HERE *)
-Admitted.
+  unfold terminates; intros.
+  assert ((SKIP, st1) = (SKIP, st2)).
+    apply finseq_unique with (R:=cstep) (a:=(c,st)); auto.
+    intros. apply cstep_functional with a; auto.
+    apply irred_SKIP. apply irred_SKIP.
+  inversion H1. auto.
+Qed.
 
 Lemma terminates_diverges_exclusive:
   forall c st st', terminates c st st' -> diverges c st -> False.
 Proof.
-  (* FILL IN HERE *)
-Admitted.
+  unfold terminates, diverges. intros.
+  apply infseq_finseq_excl in H; auto.
+    intros. apply cstep_functional with a; auto.
+    apply irred_SKIP.
+Qed.
 
 (** *** Exercise (3 stars, recommended) *)
 (** Show that Imp programs cannot go wrong.  Hint: first prove the following
@@ -160,8 +167,16 @@ Lemma cstep_progress:
   forall c st, c = SKIP \/ exists c', exists st', c / st ==> c' / st'.
 Proof.
   induction c; intros.
-  (* FILL IN HERE *)
-Admitted.
+  left; auto.
+  right. exists SKIP, (t_update st i (aeval st a)). constructor. auto.
+  right. destruct IHc1 with (st:=st) as [a1 | a2].
+    subst. exists c2, st. constructor.
+    destruct a2 as (c' & st' & H). exists (c' ;; c2), st'. constructor; auto.
+  right. destruct (beval st b) eqn: bv.
+    exists c1, st. constructor; auto.
+    exists c2, st. constructor; auto.
+  right. exists (IFB b THEN (c ;; (WHILE b DO c END)) ELSE SKIP FI), st. constructor.
+Qed.
 
 Definition goes_wrong (c: com) (st: state) : Prop :=
   exists c', exists st',
@@ -171,16 +186,26 @@ Lemma not_goes_wrong:
   forall c st, ~(goes_wrong c st).
 Proof.
   unfold not, goes_wrong, irred; intros.
-  (* FILL IN HERE *)
-Admitted.
+  destruct H as (c' & st' & [H1 [H2 H3]]).
+  destruct (cstep_progress c' st') as [? | ?].
+    apply H3 in H. contradiction.
+    destruct H as (c2 & st2 & ?).
+    apply H2 in H. contradiction.
+Qed.
 
 (** As a corollary, using the [infseq_or_finseq] theorem from module [Sequence], we obtain that any IMP program either terminates safely or diverges. *)
 
 Lemma terminates_or_diverges:
   forall c st, (exists st', terminates c st st') \/ diverges c st.
 Proof.
-  (* FILL IN HERE *)
-Admitted.
+  intros.
+  destruct (infseq_or_finseq cstep (c, st)).
+  right. assumption.
+  left. destruct H as (b & [? ?]).
+    destruct b. destruct (cstep_progress c0 s).
+      subst. exists s. assumption.
+      destruct H1 as (? & ? & ?). apply H0 in H1. contradiction.
+Qed.
 
 (** Sequences of reductions can go under a sequence context, generalizing
   rule [CS_SeqStep]. *)
@@ -416,6 +441,15 @@ Definition kdiverges (c: com) (st: state) : Prop :=
   then resumes the loop at its next iteration (instead of stopping
   the loop like "break" does). Give the transition rules
   for the "continue" statement. *)
+
+(*
+<<
+  | KS_ContSeq: forall c k st,
+      kstep (CONTINUE, Kseq c k, st) (CONTINUE, k, st)
+  | KS_ContWhile: forall b c k st,
+      kstep (CONTINUE, Kwhile b c k, st) (WHILE b DO c END, k, st)
+>>
+*)
 
 (** *** Exercise (3 stars, optional) *)
 (** In Java, loops as well as "break" and "continue" statements carry
