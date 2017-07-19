@@ -114,6 +114,15 @@ Record ChoosableFromInterval (A : Type) : Type := Build_ChoosableFromInterval
 (** Print out the full definition of [ChoosableFromInterval].  Can you
     understand what it means?  [] *)
 
+Set Printing All.
+Print ChoosableFromInterval.
+Unset Printing All.
+
+(* given a a1 a2, given a1 <= a2,
+   a1 <= a && a <= a2 is true if and only if
+   there exists a random seed that using randomR on this seed  between a1 and a2 could gain a.
+ *)
+
 (* ================================================================= *)
 (** ** Lists *)
 
@@ -363,7 +372,7 @@ Fixpoint genTreeSized {A} (sz : nat) (g : G A) : G (Tree A) :=
                  ]
   end.
 
-(* Sample (genTreeSized 3 (choose(0,3))). *)
+Sample (genTreeSized 3 (choose(0,3))).
 (** 
       ===> 
        [ Leaf,
@@ -461,7 +470,14 @@ Fixpoint genTreeSized' {A} (sz : nat) (g : G A) : G (Tree A) :=
 (** **** Exercise: 2 stars (genListSized)  *)
 (** Write a sized generator for lists, following [genTreeSized']. *)
 
-(* FILL IN HERE *)
+Fixpoint genListSized' {A} (sz : nat) (g : G A) : G (list A) :=
+  match sz with
+    | O => ret nil
+    | S sz' =>
+        freq [ (1,  ret nil) ;
+               (sz, liftM2 cons g (genListSized' sz' g))
+             ]
+  end.
 (** [] *)
 
 (** **** Exercise: 3 stars (genColorOption)  *)
@@ -469,7 +485,14 @@ Fixpoint genTreeSized' {A} (sz : nat) (g : G A) : G (Tree A) :=
     it generate [None] about 1/10th of the time, and make it generate
     [Some Red] three times as often as the other colors. *)
 
-(* FILL IN HERE *)
+ Function {A} : G (option color) :=
+  match sz with
+    | O => ret nil
+    | S sz' =>
+        freq [ (1,  ret nil) ;
+               (sz, liftM2 cons g (genListSized' sz' g))
+             ]
+  end.
 (** [] *)
 
 (* ================================================================= *)
