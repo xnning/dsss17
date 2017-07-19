@@ -372,7 +372,7 @@ Fixpoint genTreeSized {A} (sz : nat) (g : G A) : G (Tree A) :=
                  ]
   end.
 
-Sample (genTreeSized 3 (choose(0,3))).
+(* Sample (genTreeSized 3 (choose(0,3))). *)
 (** 
       ===> 
        [ Leaf,
