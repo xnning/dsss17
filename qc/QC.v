@@ -1481,7 +1481,7 @@ Fixpoint genSortedList (low high : nat) (size : nat)
     else
       freq [ (1, returnGen []) ;
              (size, x <- choose (low, high);;
-                    xs <- genSortedList x high size';; 
+                    xs <- genSortedList x high size';;
                     returnGen (x :: xs)) ] end.
 
 (** We use a [size] parameter to control the length of generated
