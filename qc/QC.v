@@ -1481,7 +1481,7 @@ Fixpoint genSortedList (low high : nat) (size : nat)
     else
       freq [ (1, returnGen []) ;
              (size, x <- choose (low, high);;
-                    xs <- genSortedList x high size';;
+                    xs <- genSortedList x high size';; 
                     returnGen (x :: xs)) ] end.
 
 (** We use a [size] parameter to control the length of generated
@@ -1610,5 +1610,29 @@ Definition insertBST_spec' (low high : nat) (x : nat) (t : Tree nat) :=
 (** Write a generator that produces binary search trees directly, so
     that you run 10000 tests with 0 discards. *)
 
-(* FILL IN HERE *)
+
+Fixpoint genBSTSized (low high : nat) (sz : nat) : G (Tree nat) :=
+  match sz with
+    | O => ret Leaf
+    | S sz' =>
+      if high - 1 <? low + 1 then
+        returnGen Leaf
+      else
+        freq [ (1, returnGen Leaf);
+                 (sz, x <- choose (low+1, high-1);;
+                          l <- genBSTSized low x  sz';;
+                          r <- genBSTSized x high sz';;
+                          returnGen (Node x l r))
+             ]
+  end
+.
+
+Definition insertBST_test :=
+  forAllShrink ( l <- genBSTSized 0 10 10;;
+                   x <- choose (1, 9) ;;
+                   ret (l, x)) shrink
+               (fun p => isBST 0 10 (insertBST' (snd p) (fst p))).
+
+(* QuickChick insertBST_test. *)
+
 (** [] *)
