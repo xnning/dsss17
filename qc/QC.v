@@ -1009,13 +1009,43 @@ Definition tern_to_list {A : Type} (t : TernaryTree A) : list A :=
 (** **** Exercise: 1 star (show_tern_tree)  *)
 (** Write a [Show] instance for Ternary Trees. *)
 
-(* FILL IN HERE *)
+Open Scope string.
+Instance showTernTree {A: Type} `{_ :Show A} : Show (TernaryTree A) :=
+  {
+    show :=
+      let fix aux t :=
+          match t with
+          | TLeaf => "Leaf"
+          | TNode x l m r => "Node (" ++ show x ++ ") ("
+                                    ++ aux l ++ ") ("
+                                    ++ aux m ++ ") ("
+                                    ++ aux r ++ ")"
+          end
+            in aux
+  }
+.
 (** [] *)
 
 (** **** Exercise: 2 stars: (gen_tern_tree)  *)
 (** Write a generator for ternary trees. *)
 
-(* FILL IN HERE *)
+Definition liftM4
+            {m : Type -> Type}
+            {M : Monad m}
+            {T U V W X : Type} (f : T -> U -> V -> W -> X)
+          : m T -> m U -> m V -> m W -> m X :=
+    fun x y z t => bind x (fun x => liftM3 (f x) y z t).
+
+Fixpoint genTernTreeSized {A} (sz : nat) (g : G A) : G (TernaryTree A) :=
+  match sz with
+    | O => ret TLeaf
+    | S sz' =>
+        freq [ (1,  ret TLeaf) ;
+               (sz, liftM4 TNode g (genTernTreeSized sz' g)
+                                   (genTernTreeSized sz' g)
+                                   (genTernTreeSized sz' g))
+             ]
+  end.
 
 (** The following line should generate a bunch of nat ternary trees. *)
 (* Sample (@genTernTreeSized nat 3 (choose (0,10))). *)
@@ -1024,7 +1054,21 @@ Definition tern_to_list {A : Type} (t : TernaryTree A) : list A :=
 (** **** Exercise: 2 stars (shrink_tern_tree)  *)
 (** Write a shrinker for ternary trees. *)
 
-(* FILL IN HERE *)
+Open Scope list.
+Fixpoint shrinkTernTreeAux {A}
+              (s : A -> list A) (t : TernaryTree A)
+            : list (TernaryTree A) :=
+  match t with
+    | TLeaf => []
+    | TNode x l m r => [l] ++ [m] ++ [r] ++
+                    map (fun x' => TNode x' l m r) (s x) ++
+                    map (fun l' => TNode x l' m r) (shrinkTernTreeAux s l) ++
+                    map (fun m' => TNode x l m' r) (shrinkTernTreeAux s m) ++
+                    map (fun r' => TNode x l m r') (shrinkTernTreeAux s r)
+  end.
+
+Instance shrinkTernTree {A} `{Shrink A} : Shrink (TernaryTree A) :=
+  {| shrink x := shrinkTernTreeAux shrink x |}.
 (** [] *)
 
 (** Converting a ternary tree to a list and reversing it should yield
@@ -1036,8 +1080,37 @@ Definition tern_mirror_reverse (t : TernaryTree nat) :=
 (** Using genTernTreeSized and shrinkTernTree find (and fix!) any bugs in
     tern_mirror. *)
 
-(* FILL IN HERE *)
+(* QuickChick *)
+(*      (forAllShrink *)
+(*         (genTernTreeSized 5 (choose (0,5))) *)
+(*         shrink *)
+(*         tern_mirror_reverse). *)
+
+(*
+===>
+Node (0) (Leaf) (Node (0) (Leaf) (Leaf) (Node (1) (Leaf) (Leaf) (Leaf))) (Leaf)
+*** Failed after 1 tests and 6 shrinks. (0 discards)
+*)
+
+Fixpoint tern_mirror' {A : Type} (t : TernaryTree A) : TernaryTree A :=
+  match t with
+    | TLeaf => TLeaf
+    | TNode x l m r => TNode x (tern_mirror' r) (tern_mirror' m) (tern_mirror' l)
+  end.
+
+Definition tern_mirror_reverse' (t : TernaryTree nat) :=
+  tern_to_list (tern_mirror' t) = List.rev (tern_to_list t) ?.
+
+(* QuickChick *)
+(*      (forAllShrink *)
+(*         (genTernTreeSized 5 (choose (0,5))) *)
+(*         shrink *)
+(*         tern_mirror_reverse'). *)
+
+(* +++ Passed 10000 tests (0 discards) *)
+
 (** [] *)
+
 
 (* ################################################################# *)
 (** * Putting it all Together *)
@@ -1171,7 +1244,8 @@ Instance genTree {A} `{Gen A} : GenSized (Tree A) :=
 (** Add typeclass instances for [GenSized] and [Shrink] so that you
     can [QuickChick tern_mirror_reverse] directly. *)
 
-(* FILL IN HERE *)
+Instance genTernTree {A} `{Gen A} : GenSized (TernaryTree A) :=
+  {| arbitrarySized n := genTernTreeSized n arbitrary |}.
 
 (* QuickChick tern_mirror_reverse. *)
 (** [] *)
@@ -1407,7 +1481,7 @@ Fixpoint genSortedList (low high : nat) (size : nat)
     else
       freq [ (1, returnGen []) ;
              (size, x <- choose (low, high);;
-                    xs <- genSortedList x high size';; 
+                    xs <- genSortedList x high size';;
                     returnGen (x :: xs)) ] end.
 
 (** We use a [size] parameter to control the length of generated
