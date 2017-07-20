@@ -1329,16 +1329,23 @@ Open Scope bool.
 (** Consider inserting natural numbers in a sorted list (in ascending
     order). *)
 
-Fixpoint insert (x : nat) (l : list nat) := 
-  match l with | [] => [x] | y::ys => if x <=? y then x :: l else y ::
-  insert x ys end.
-
 Fixpoint sorted (l : list nat) := 
-  match l with | [] => true | x::xs => match xs with | [] => true | y
-  :: ys => (x <=? y) && (sorted xs) end end.
+  match l with 
+  | [] => true 
+  | x::xs => match xs with 
+             | [] => true 
+             | y :: ys => (x <=? y) && (sorted xs) 
+             end 
+  end.
 
-(** We could test [insert] using the following _conditional_
-property: *)
+Fixpoint insert (x : nat) (l : list nat) := 
+  match l with 
+  | [] => [x] 
+  | y::ys => if x <=? y then x :: l 
+             else y :: insert x ys 
+  end.
+
+(** We could test [insert] using the following _conditional_ property: *)
 
 Definition insert_spec (x : nat) (l : list nat) :=
   sorted l ==> sorted (insert x l).
@@ -1346,7 +1353,9 @@ Definition insert_spec (x : nat) (l : list nat) :=
 (* QuickChick insert_spec. *)
 (**
 << 
-===> QuickChecking insert_spec +++ Passed 10000 tests (17325 discards)
+===> 
+  QuickChecking insert_spec 
+  +++ Passed 10000 tests (17325 discards)
 *)
 
 (** To test this property, QuickChick will try to generate random
