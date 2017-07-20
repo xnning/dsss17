@@ -485,14 +485,15 @@ Fixpoint genListSized' {A} (sz : nat) (g : G A) : G (list A) :=
     it generate [None] about 1/10th of the time, and make it generate
     [Some Red] three times as often as the other colors. *)
 
- Function {A} : G (option color) :=
-  match sz with
-    | O => ret nil
-    | S sz' =>
-        freq [ (1,  ret nil) ;
-               (sz, liftM2 cons g (genListSized' sz' g))
+Definition genColorOption : G (option color) :=
+        freq [ (2, ret None) ;
+                 (9, ret (Some Red)) ;
+                 (3, ret (Some Blue));
+                 (3, ret (Some Green));
+                 (3, ret (Some Yellow))
              ]
-  end.
+.
+
 (** [] *)
 
 (* ================================================================= *)
