@@ -222,7 +222,21 @@ Fixpoint mach_interp (C: code) (fuel: nat)
       match code_at C pc, stk with
       | Some Ihalt, nil => Terminates st
       | Some (Iconst n), stk => mach_interp C fuel' (pc + 1) (n :: stk) st
-      (* FILL IN HERE *)
+      | Some (Ivar x), stk => mach_interp C fuel' (pc + 1) (st x :: stk) st
+      | Some (Isetvar x), n :: stk => mach_interp C fuel' (pc + 1) stk (t_update st x n)
+      | Some Iadd, n2 :: n1 :: stk => mach_interp C fuel' (pc + 1) ((n1 + n2) :: stk) st
+      | Some Isub, n2 :: n1 :: stk => mach_interp C fuel' (pc + 1) ((n1 - n2) :: stk) st
+      | Some Imul, n2 :: n1 :: stk => mach_interp C fuel' (pc + 1) ((n1 * n2) :: stk) st
+      | Some (Ibranch_forward ofs), stk => mach_interp C fuel' (pc + 1 + ofs) stk st
+      | Some (Ibranch_backward ofs), stk => mach_interp C fuel' (pc + 1 - ofs) stk st
+      | Some (Ibeq ofs), n2 :: n1 :: stk =>
+        mach_interp C fuel' (if beq_nat n1 n2 then pc + 1 + ofs else pc + 1) stk st
+      | Some (Ibne ofs), n2 :: n1 :: stk =>
+        mach_interp C fuel' (if beq_nat n1 n2 then pc + 1 else pc + 1 + ofs) stk st
+      | Some (Ible ofs), n2 :: n1 :: stk =>
+        mach_interp C fuel' (if leb n1 n2 then pc + 1 + ofs else pc + 1) stk st
+      | Some (Ibgt ofs), n2 :: n1 :: stk =>
+        mach_interp C fuel' (if leb n1 n2 then pc + 1 else pc + 1 + ofs) stk st
       | _, _ => GoesWrong
       end
   end.
