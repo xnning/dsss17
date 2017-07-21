@@ -223,12 +223,14 @@ Qed.
 Lemma swap_symmetric : forall t x y,
     swap x y t = swap y x t.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. induction t; simpl; unfold swap_var; default_simp.
+Qed.
 
 Lemma swap_involutive : forall t x y,
     swap x y (swap x y t) = t.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. induction t; simpl; unfold swap_var; default_simp.
+Qed.
 
 (** *** Challenge exercises: equivariance
 
@@ -245,18 +247,31 @@ Lemma swap_var_equivariance : forall v x y z w,
     swap_var x y (swap_var z w v) =
     swap_var (swap_var x y z) (swap_var x y w) (swap_var x y v).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros; unfold swap_var; default_simp.
+Qed.
 
 Lemma swap_equivariance : forall t x y z w,
     swap x y (swap z w t) = swap (swap_var x y z) (swap_var x y w) (swap x y t).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. induction t; simpl.
+  - rewrite swap_var_equivariance. auto.
+  - rewrite swap_var_equivariance. rewrite IHt. auto.
+  - rewrite IHt1. rewrite IHt2. auto.
+Qed.
 
 Lemma notin_fv_nom_equivariance : forall x0 x y t ,
   x0 `notin` fv_nom t ->
   swap_var x y x0  `notin` fv_nom (swap x y t).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. destruct (x == x0).
+    subst. unfold swap_var. default_simp.
+      rewrite swap_symmetric. apply fv_nom_swap; auto.
+    destruct (y == x0).
+      subst. unfold swap_var. default_simp.
+        apply fv_nom_swap; auto.
+      unfold swap_var. default_simp.
+        induction t; simpl; unfold swap_var; default_simp.
+Qed.
 
 (* HINT: For a helpful fact about sets of atoms, check AtomSetImpl.union_1 *)
 
@@ -264,7 +279,14 @@ Lemma in_fv_nom_equivariance : forall x y x0 t,
   x0 `in` fv_nom t ->
   swap_var x y x0 `in` fv_nom (swap x y t).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. induction t; unfold swap_var; simpl in *.
+    apply singleton_iff in H. default_simp.
+    rewrite remove_iff in H. destruct H.
+      apply IHt in H. unfold swap_var in *. default_simp.
+    apply AtomSetImpl.union_1 in H. destruct H.
+      apply IHt1 in H. unfold swap_var in *. default_simp.
+      apply IHt2 in H. unfold swap_var in *. default_simp.
+Qed.
 
 
 
