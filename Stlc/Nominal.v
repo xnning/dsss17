@@ -405,8 +405,8 @@ semantics in the next section.
 Lemma values_are_done : forall D t,
     isVal t = true -> machine_step D (initconf t) = Done _.
 Proof.
-(* FILL IN HERE *) Admitted.
-
+  intros. destruct t; inversion H; auto.
+Qed.
 
 (*************************************************************)
 (** * Size based reasoning                                   *)
@@ -497,24 +497,33 @@ Qed.
 Lemma subst_eq_var : forall u x,
     subst u x (n_var x) = u.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros; unfold subst; simpl; default_simp.
+Qed.
 
 Lemma subst_neq_var : forall u x y,
     x <> y ->
     subst u x (n_var y) = n_var y.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros; unfold subst; simpl; default_simp.
+Qed.
 
 Lemma subst_app : forall u x t1 t2,
     subst u x (n_app t1 t2) = n_app (subst u x t1) (subst u x t2).
-Proof. (* FILL IN HERE *) Admitted.
+Proof.
+  intros; unfold subst; simpl; default_simp.
+  apply subst_size. omega.
+  apply subst_size. omega.
+Qed.
 
 Lemma subst_abs : forall u x y t1,
     subst u x (n_abs y t1) =
        if (x == y) then (n_abs y t1)
        else let (z,_) := atom_fresh (fv_nom u `union` fv_nom (n_abs y t1) `union` {{x}}) in
        n_abs z (subst u x (swap y z t1)).
-Proof. (* FILL IN HERE *) Admitted.
+Proof.
+  intros; unfold subst; simpl; default_simp.
+  apply subst_size. rewrite swap_size_eq. omega.
+Qed.
 
 
 (** ** Challenge Exercise [subst properties]
@@ -526,7 +535,20 @@ Proof.
   intro n. induction n.
   intros t y SZ. destruct t; simpl in SZ; omega.
   intros t y SZ. destruct t; simpl in SZ.
-(* FILL IN HERE *) Admitted.
+    unfold subst; default_simp.
+    unfold subst; simpl. default_simp.
+      apply aeq_abs_same. apply aeq_refl.
+      destruct (x0 == x).
+        subst. rewrite swap_id. apply aeq_abs_same.
+          apply IHn. omega.
+        apply aeq_abs_diff; auto.
+          rewrite <- (swap_size_eq x x0).
+          apply IHn.
+          rewrite (swap_size_eq x x0). omega.
+    rewrite subst_app. apply aeq_app; auto.
+      apply IHn. omega.
+      apply IHn. omega.
+Qed.
 
 Lemma subst_same : forall t y, aeq (subst (n_var y) y t)  t.
 Proof.
@@ -537,7 +559,28 @@ Qed.
 
 Lemma subst_fresh_eq_aux : forall n, forall (x : atom) t u, size t <= n ->
   x `notin` fv_nom t -> aeq (subst u x t) t.
-Proof. (* FILL IN HERE *) Admitted.
+Proof.
+  intro n. induction n.
+  intros x t u SZ. destruct t; simpl in SZ; omega.
+  intros x t u SZ; intros. destruct t; simpl in SZ, H.
+    apply notin_singleton_1 in H.
+      unfold subst; default_simp.
+    unfold subst; default_simp.
+      apply aeq_refl.
+      destruct (x1 == x0).
+        subst. rewrite swap_id. apply aeq_abs_same.
+          apply IHn; auto. omega.
+        apply aeq_abs_diff; auto.
+          rewrite <- (swap_size_eq x0 x1).
+          apply IHn.
+          rewrite (swap_size_eq x0 x1). omega.
+          assert (x1 <> x). auto.
+          assert (swap_var x0 x1 x = x). unfold swap_var. default_simp.
+          rewrite <- H1.
+          apply notin_fv_nom_equivariance; auto.
+   rewrite subst_app. apply aeq_app. apply IHn; auto. omega.
+     apply IHn; auto. omega.
+Qed.
 
 Lemma subst_fresh_eq : forall (x : atom) t u,  x `notin` fv_nom t -> aeq (subst u x t) t.
 Proof.
