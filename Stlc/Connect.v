@@ -169,12 +169,21 @@ Hint Resolve apply_heap_lc : lngen.
     [lngen] hint database so that the proof for [decode_lc] goes
     through. *)
 
-(* FILL IN HERE *)
+Lemma apply_stack_lc : forall s h e,
+    lc_exp e -> lc_exp (apply_stack h s e).
+Proof.
+  induction s; intros.
+  default_simp.
+  destruct a. simpl. apply IHs.
+    default_steps.
+Qed.
+
+Hint Resolve apply_stack_lc : lngen.
 
 Lemma decode_lc : forall c, lc_exp (decode c).
 Proof.
   intros [[h e] s]; default_simp.
-  (* FILL IN HERE *) Admitted.
+Qed.
 
 (***********************************************************************)
 (** ** Properties of apply_heap *)
@@ -212,7 +221,8 @@ Lemma apply_heap_open : forall h e e0,
     apply_heap h (open e e0)  =
        open (apply_heap h e) (apply_heap h e0).
 Proof.
-(* FILL IN HERE *) Admitted.
+  alist induction h; default_simp.
+Qed.
 
 Hint Rewrite apply_heap_open : lngen.
 
@@ -277,7 +287,11 @@ Lemma close_exp_wrt_exp_freshen : forall x y e,
     close_exp_wrt_exp x e =
     close_exp_wrt_exp y ([x ~> var_f y] e).
 Proof.
-(* FILL IN HERE *) Admitted.
+  intros x y e.
+  unfold close_exp_wrt_exp; unfold subst_exp; generalize 0;
+    induction e;
+    default_simp.
+Qed.
 
 (** One difficulty of [swap_spec] is that we need to use the induction
     not on direct subterms, but on those that have had a swapping applied
