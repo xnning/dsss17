@@ -265,12 +265,58 @@ Qed.
 (** **** Exercise: 4 stars, optional (insert_sorted')  *)
 Lemma insert_sorted':
   forall a l, sorted' l -> sorted' (insert a l).
-(* FILL IN HERE *) Admitted.
+Proof.
+  induction l; unfold sorted'; intros.
+  inv H0. inv H2. inv H1. inv H3.
+  simpl. simpl in H0. find_if_bdestruct.
+    destruct i; simpl.
+      destruct j; simpl; auto. destruct j; simpl; auto.
+        specialize (H O (S j)). simpl in H.
+        assert (a0 <= nth j l 0). apply H. simpl in H0. omega.
+        omega.
+      destruct j; simpl; auto. inv H0. inv H2.
+        apply H. simpl in H0. simpl. omega.
+    assert (sorted' (insert a l)). apply IHl.
+        unfold sorted'. intros.
+        specialize (H (S i0) (S j0)).
+        assert(nth (S i0) (a0 :: l) 0 <= nth (S j0) (a0 :: l) 0).
+          apply H. simpl. omega.
+        simpl in H3. apply H3.
+      unfold sorted' in H2.
+      destruct i; destruct j; simpl; auto.
+        - destruct l; simpl. destruct j; simpl; auto; try omega.
+          simpl in H0. inv H0. inv H4. inv H5. inv H4.
+          find_if_bdestruct.
+            + destruct j; simpl; auto; try omega.
+              specialize (H O (S j)).
+              assert(nth 0 (a0 :: n :: l) 0 <= nth (S j) (a0 :: n :: l) 0).
+                apply H. simpl in H0. find_if_bdestruct; simpl in *; try omega.
+              simpl in H4. apply H4.
+            + assert (a0 <= n).
+                specialize (H O (S O)).
+                assert (nth 0 (a0 :: n :: l) 0 <= nth 1 (a0 :: n :: l) 0).
+                  apply H. simpl in *; omega.
+                simpl in H4. omega.
+              simpl in H2. find_if_bdestruct; try omega.
+              destruct j; simpl; try omega.
+              specialize (H2 O (S j)).
+              assert (nth 0 (n :: insert a l) 0 <= nth (S j) (n :: insert a l) 0).
+                apply H2. simpl. simpl in H0.
+                find_if_bdestruct; try omega.
+                simpl in H0. omega.
+              simpl in H6.
+              omega.
+        - inv H0. inv H3.
+        - apply H2. simpl in H0. omega.
+Qed.
 (** [] *)
 
 (** **** Exercise: 4 stars, optional (insert_sorted')  *)
 Theorem sort_sorted': forall l, sorted' (sort l).
-(* FILL IN HERE *) Admitted.
+Proof.
+  induction l; unfold sorted'; intros; simpl in *; try omega.
+  apply insert_sorted'; auto.
+Qed.
 (** [] *)
 
 (* ================================================================= *)
