@@ -118,7 +118,11 @@ SearchAbout Permutation.
 
 Lemma insert_perm: forall x l, Permutation (x::l) (insert x l).
 Proof.
-(* FILL IN HERE *) Admitted.
+  induction l; simpl; auto.
+  destruct (x <=? a); simpl; auto.
+  apply perm_trans with (a :: x :: l); auto.
+  apply perm_swap.
+Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars  *)
@@ -126,7 +130,11 @@ Proof.
 
 Theorem sort_perm: forall l, Permutation l (sort l).
 Proof.
-(* FILL IN HERE *) Admitted.
+  induction l; simpl; auto.
+  eapply perm_trans with (a :: sort l).
+  apply perm_skip; auto.
+  apply insert_perm.
+Qed.
 (** [] *)
 
 (** **** Exercise: 4 stars  *)
@@ -134,17 +142,27 @@ Proof.
    right at the beginning, and you do _not_ need to use [insert_perm]
    or [sort_perm]. *)
 
+Ltac find_if_bdestruct :=
+  match goal with
+    | [ |- context[?a <=? ?x] ] => bdestruct (a <=? x)
+    | [ H : context[?a <=? ?x] |- _ ] => bdestruct (a <=? x)
+  end.
+
 Lemma insert_sorted:
   forall a l, sorted l -> sorted (insert a l).
 Proof.
-(* FILL IN HERE *) Admitted.
+  intros. induction H; simpl in *;
+  repeat try find_if_bdestruct; repeat constructor; try omega; auto.
+Qed.
 
 (** **** Exercise: 2 stars  *)
 (** This one is easy.   *)
 
 Theorem sort_sorted: forall l, sorted (sort l).
 Proof.
-(* FILL IN HERE *) Admitted.
+  induction l; simpl; try constructor.
+  apply insert_sorted; auto.
+Qed.
 (** [] *)
 
 (** Now we wrap it all up.  *)
@@ -175,7 +193,18 @@ Lemma sorted_sorted': forall al, sorted al -> sorted' al.
     you may have to think about how to approach it, and try out
     one or two different ideas.*)
 
-(* FILL IN HERE *) Admitted.
+  intros. unfold sorted'.
+  induction H; intros.
+    simpl in H. inv H. inv H1.
+    simpl in H. inv H. inv H1. inv H0. inv H2.
+    destruct i.
+      destruct j; auto. destruct j. simpl; auto.
+        specialize (IHsorted O (S j)).
+        assert (nth 0 (y :: l) 0 <= nth (S j) (y :: l) 0). apply IHsorted. simpl in *. omega.
+        simpl in H2. simpl. omega.
+      destruct j; auto. inv H1. inv H2.
+        simpl. apply IHsorted. simpl in *. omega.
+Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, optional (sorted'_sorted)  *)
@@ -185,7 +214,12 @@ Lemma sorted'_sorted: forall al, sorted' al -> sorted al.
     because [sorted'] is not an inductive predicate. *)
 
 Proof.
-(* FILL IN HERE *) Admitted.
+  induction al; unfold sorted'; intros; try constructor.
+  destruct al; constructor.
+    specialize (H O (S O)). simpl in H. apply H; omega.
+    apply IHal. unfold sorted'. intros.
+    specialize (H (S i) (S j)). simpl in H. apply H. simpl in H0. omega.
+Qed.
 (** [] *)
 
 (* ################################################################# *)
@@ -214,7 +248,17 @@ Lemma Forall_nth:
   forall {A: Type} (P: A -> Prop) d (al: list A),
      Forall P al <-> (forall i,  i < length al -> P (nth i al d)).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros; split.
+  induction al; intros.
+    simpl in H0. inv H0.
+    inv H.
+     simpl in H0. destruct i; simpl; auto.
+       apply IHal; auto. omega.
+  induction al; intros.
+    constructor.
+    constructor. specialize (H O). simpl in H. apply H. omega.
+      apply IHal. intros. specialize (H (S i)). simpl in H. apply H. omega.
+Qed.
 (** [] *)
 
 
