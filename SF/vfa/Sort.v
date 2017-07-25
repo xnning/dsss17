@@ -216,7 +216,7 @@ Lemma sorted'_sorted: forall al, sorted' al -> sorted al.
 Proof.
   induction al; unfold sorted'; intros; try constructor.
   destruct al; constructor.
-    specialize (H O (S O)). simpl in H. apply H; omega.
+    specialize (H O (S O)). simpl in H. omega.
     apply IHal. unfold sorted'. intros.
     specialize (H (S i) (S j)). simpl in H. apply H. simpl in H0. omega.
 Qed.
@@ -250,14 +250,13 @@ Lemma Forall_nth:
 Proof.
   intros; split.
   induction al; intros.
-    simpl in H0. inv H0.
+    inv H0.
     inv H.
-     simpl in H0. destruct i; simpl; auto.
-       apply IHal; auto. omega.
-  induction al; intros.
-    constructor.
-    constructor. specialize (H O). simpl in H. apply H. omega.
-      apply IHal. intros. specialize (H (S i)). simpl in H. apply H. omega.
+      simpl in H0. destruct i; simpl; auto.
+        apply IHal; auto. omega.
+  induction al; intros; constructor.
+     specialize (H O). simpl in H. apply H. omega.
+     apply IHal. intros. specialize (H (S i)). simpl in H. apply H. omega.
 Qed.
 (** [] *)
 
