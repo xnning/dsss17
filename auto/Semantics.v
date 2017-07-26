@@ -91,9 +91,6 @@ Inductive cstep : (com * state) -> (com * state) -> Prop :=
   | CS_While : forall st b c1,
       (WHILE b DO c1 END) / st
        ==> (IFB b THEN (c1 ;; (WHILE b DO c1 END)) ELSE SKIP FI) / st
-  | CS_DOWhile : forall st b c1,
-      (DO1 c1 WHILE b END) / st
-       ==> (c1 ;; (WHILE b DO c1 END)) / st
 
   where " c '/' st '==>' c' '/' st' " := (cstep (c,st) (c',st')).
 
@@ -367,9 +364,7 @@ Inductive kstep : (com * cont * state) -> (com * cont * state) -> Prop :=
   | KS_SkipSeq: forall c k st,  (**r Resumption on [SKIP] *)
       kstep (SKIP, Kseq c k, st) (c, k, st)
   | KS_SkipWhile: forall b c k st,
-      kstep (SKIP, Kwhile b c k, st) (WHILE b DO c END, k, st)
-  | KS_DoWhile: forall b c k st,
-      kstep (DO1 c WHILE b END, k, st) (c, Kwhile b c k, st).
+      kstep (SKIP, Kwhile b c k, st) (WHILE b DO c END, k, st).
 
 (** Note: the [kstep] relation is not inductive, in the sense that the premises
   of the rules never involve the [kstep] relation itself.  Contrast with
