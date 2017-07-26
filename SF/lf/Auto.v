@@ -65,7 +65,8 @@ Proof.
     assert (st' = st'0) as EQ1.
     { (* Proof of assertion *) apply IHE1_1; assumption. }
     subst st'0.
-    apply IHE1_2. assumption.  Qed.
+    apply IHE1_2. assumption.
+Admitted.
 
 (* ################################################################# *)
 (** * The [auto] Tactic *)
@@ -238,7 +239,7 @@ Proof.
     assert (st' = st'0) as EQ1 by auto.
     subst st'0.
     auto.
-Qed.
+Admitted.
 
 (** When we are using a particular tactic many times in a proof, we
     can use a variant of the [Proof] command to make that tactic into
@@ -274,7 +275,7 @@ Proof with auto.
   - (* b evaluates to true *)
     assert (st' = st'0) as EQ1...
     subst st'0...
-Qed.
+Admitted.
 
 (* ################################################################# *)
 (** * Searching For Hypotheses *)
@@ -333,7 +334,8 @@ Proof.
   - (* b evaluates to true *)
     assert (st' = st'0) as EQ1 by auto.
     subst st'0.
-    auto. Qed.
+    auto.
+Admitted.
 
 (** That was is a bit better, but not much.  We really want Coq to
     discover the relevant hypotheses for us.  We can do this by using
@@ -371,7 +373,8 @@ Proof.
     + (* b evaluates to true *)
       assert (st' = st'0) as EQ1 by auto.
       subst st'0.
-      auto. Qed.
+      auto.
+Admitted.
 
 (** Let's see about the remaining cases. Each of them involves
     applying a conditional hypothesis to extract an equality.
@@ -392,7 +395,8 @@ Proof.
     rewrite (IHE1_1 st'0 H1) in *. auto.
   - (* E_WhileTrue *)
     + (* b evaluates to true *)
-      rewrite (IHE1_1 st'0 H3) in *. auto. Qed.
+      rewrite (IHE1_1 st'0 H3) in *. auto.
+Admitted.
 
 (** Now we can automate the task of finding the relevant hypotheses to
     rewrite with. *)
