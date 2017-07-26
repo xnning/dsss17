@@ -79,6 +79,5 @@ type com =
 | CSeq of com * com
 | CIf of bexp * com * com
 | CWhile of bexp * com
-| CDoWhile of com * bexp
 
 val ceval_step : state -> com -> nat -> state option

@@ -35,8 +35,6 @@ Fixpoint ceval_step1 (st : state) (c : com) : state :=
           else ceval_step1 st c2
     | WHILE b1 DO c1 END =>
         st  (* bogus *)
-    | DO1 c1 WHILE b1 END =>
-        st  (* bogus *)
   end.
 
 (** As we remarked in chapter [Imp], in a traditional functional
@@ -100,9 +98,6 @@ Fixpoint ceval_step2 (st : state) (c : com) (i : nat) : state :=
           then let st' := ceval_step2 st c1 i' in
                ceval_step2 st' c i'
           else st
-      | DO1 c1 WHILE b1 END =>
-        let st' := ceval_step2 st c1 i' in
-        ceval_step2 st' (WHILE b1 DO c1 END) i'
     end
   end.
 
@@ -147,11 +142,6 @@ Fixpoint ceval_step3 (st : state) (c : com) (i : nat)
                | None => None
                end
           else Some st
-      | DO1 c1 WHILE b1 END =>
-        match (ceval_step3 st c1 i') with
-        | Some st' => ceval_step3 st' (WHILE b1 DO c1 END) i'
-        | None => None
-        end
     end
   end.
 
@@ -188,9 +178,6 @@ Fixpoint ceval_step (st : state) (c : com) (i : nat)
           then LETOPT st' <== ceval_step st c1 i' IN
                ceval_step st' c i'
           else Some st
-      | DO1 c1 WHILE b1 END =>
-          LETOPT st' <== ceval_step st c1 i' IN
-          ceval_step st' (WHILE b1 DO c1 END) i'
     end
   end.
 
@@ -294,10 +281,7 @@ Proof.
         * (* r = false *)
           inversion H1.
           apply E_WhileFalse.
-          rewrite <- Heqr. subst. reflexivity.
-      + (* DO WHILE *)
-        admit.
-Admitted.
+          rewrite <- Heqr. subst. reflexivity.  Qed.
 
 (** **** Exercise: 4 stars (ceval_step__ceval_inf)  *)
 (** Write an informal proof of [ceval_step__ceval], following the
@@ -353,9 +337,7 @@ induction i1 as [|i1']; intros i2 st st' c Hle Hceval.
         rewrite -> Heqst1'o. simpl. simpl in Hceval.
         apply (IHi1' i2') in Hceval; try assumption.
       * (* i1'o = None *)
-        simpl in Hceval. inversion Hceval.
-    + admit.
-Admitted.
+        simpl in Hceval. inversion Hceval.  Qed.
 
 (** **** Exercise: 3 stars, recommended (ceval__ceval_step)  *)
 (** Finish the following proof.  You'll need [ceval_step_more] in a

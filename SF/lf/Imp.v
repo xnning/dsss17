@@ -1022,8 +1022,7 @@ Inductive com : Type :=
   | CAss : id -> aexp -> com
   | CSeq : com -> com -> com
   | CIf : bexp -> com -> com -> com
-  | CWhile : bexp -> com -> com
-  | CDoWhile : com -> bexp -> com.
+  | CWhile : bexp -> com -> com.
 
 (** As usual, we can use a few [Notation] declarations to make things
     more readable.  To avoid conflicts with Coq's built-in notations,
@@ -1041,8 +1040,6 @@ Notation "'WHILE' b 'DO' c 'END'" :=
   (CWhile b c) (at level 80, right associativity).
 Notation "'IFB' c1 'THEN' c2 'ELSE' c3 'FI'" :=
   (CIf c1 c2 c3) (at level 80, right associativity).
-Notation "'DO1' c 'WHILE' b 'END'" :=
-  (CDoWhile c b) (at level 80, right associativity).
 
 (** For example, here is the factorial function again, written as a
     formal definition to Coq: *)
@@ -1119,8 +1116,6 @@ Fixpoint ceval_fun_no_while (st : state) (c : com)
           then ceval_fun_no_while st c1
           else ceval_fun_no_while st c2
     | WHILE b DO c END =>
-        st  (* bogus *)
-    | DO1 c WHILE b END =>
         st  (* bogus *)
   end.
 
@@ -1248,10 +1243,6 @@ Inductive ceval : com -> state -> state -> Prop :=
       c / st \\ st' ->
       (WHILE b DO c END) / st' \\ st'' ->
       (WHILE b DO c END) / st \\ st''
-  | E_DoWhile : forall b st c st' st'',
-      c / st \\ st' ->
-      (WHILE b DO c END) / st' \\ st'' ->
-      (DO1 c WHILE b END) / st \\ st''
 
   where "c1 '/' st '\\' st'" := (ceval c1 st st').
 
@@ -1351,11 +1342,7 @@ Proof.
       assert (st' = st'0) as EQ1.
       { (* Proof of assertion *) apply IHE1_1; assumption. }
       subst st'0.
-      apply IHE1_2. assumption.
-  - (* E_DoWhile *)
-    apply IHE1_1 in H1. subst.
-    auto.
-Qed.
+      apply IHE1_2. assumption.  Qed.
 
 (* ################################################################# *)
 (** * Reasoning About Imp Programs *)
@@ -1416,8 +1403,6 @@ Fixpoint no_whiles (c : com) : bool :=
   | IFB _ THEN ct ELSE cf FI =>
       andb (no_whiles ct) (no_whiles cf)
   | WHILE _ DO _ END  =>
-      false
-  | DO1 _ WHILE _ END =>
       false
   end.
 
