@@ -266,8 +266,8 @@ Definition example_tree (v2 v4 v5 : V) :=
   you think example_tree should correspond to.  Use
   [t_update] and [(t_empty default)]. *)
 
-Definition example_map (v2 v4 v5: V) : total_map V
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition example_map (v2 v4 v5: V) : total_map V :=
+   t_update (t_update (t_update (t_empty default) (Id 2) v2) (Id 4) v4) (Id 5) v5.
 (** [] *)
 
 (** To build the [Abs] relation, we'll use these two auxiliary
@@ -291,7 +291,17 @@ Inductive Abs:  tree -> total_map V -> Prop :=
      If it isn't, go back and fix your definition of [example_map].
      You will probably need the [bdestruct] tactic, and [omega]. *)
 
-Lemma check_example_map: 
+Ltac find_if_bdestruct :=
+  match goal with
+    | [ |- context[?a =? ?x] ] => bdestruct (a =? x)
+    | [ |- context[?a <? ?x] ] => bdestruct (a <? x)
+    | [ |- context[?a >? ?x] ] => bdestruct (a >? x)
+    | [ H: context[?a =? ?x] |- _ ] => bdestruct (a =? x)
+    | [ H: context[?a <? ?x] |- _ ] => bdestruct (a <? x)
+    | [ H: context[?a >? ?x] |- _ ] => bdestruct (a >? x)
+  end.
+
+Lemma check_example_map:
   forall v2 v4 v5, Abs (example_tree v2 v4 v5) (example_map v2 v4 v5).
 Proof.
 intros.
@@ -300,7 +310,7 @@ evar (m: total_map V).
 replace (example_map v2 v4 v5) with m; subst m.
 repeat constructor.
 extensionality x. destruct x as [x].
-(* HINT: 
+(* HINT:
   First,    [unfold example_map, t_update, combine, t_empty, beq_id.]
   Then, repeat the following procedure:  If you see something like
   [if 4 =? x then ... else ...],    use the tactic [bdestruct (4 =? x)].
@@ -308,7 +318,9 @@ extensionality x. destruct x as [x].
   If you're too lazy to check for yourself whether they are true,
    use [bdestruct (4 =? x); try omega].
 *)
-(* FILL IN HERE *) Admitted.
+unfold  example_map, t_update, combine, t_empty, beq_id.
+repeat find_if_bdestruct; try omega; auto.
+Qed.
 (** [] *)
 
 (** You can ignore this lemma, unless it fails. *)
@@ -337,16 +349,67 @@ Theorem lookup_relate:
   forall k t cts ,
     Abs t cts -> lookup k t =  cts (Id k).
 Proof.
-(* FILL IN HERE *) Admitted.
+  induction 1; simpl.
+  rewrite t_apply_empty. auto.
+  unfold t_update.
+    repeat (find_if_bdestruct; simpl; try omega; auto).
+Qed.
 (** [] *)
 
 (** **** Exercise: 4 stars (insert_relate)  *)
+Ltac destruct_id :=
+  match goal with
+    | [ |- context [match ?x with | Id _ => _ end]] => destruct x
+    | [ H: context [match ?x with | Id _ => _ end] |- _ ] => destruct x
+  end.
+
+Ltac destruct_both :=
+  try destruct_id; try find_if_bdestruct; simpl; try omega; auto.
+
+Lemma combine_t_empty: forall k,
+  t_empty default = combine k (t_empty default) (t_empty default).
+Proof.
+  unfold combine; intros. extensionality x.
+  destruct_both.
+Qed.
+
+Lemma insert_relate_left: forall {A:Type} k0 (a b: total_map A) k v,
+    k < k0 ->
+    t_update (combine k0 a b) (Id k) v = combine k0 (t_update a (Id k) v) b.
+Proof.
+  intros. unfold t_update, combine.
+  extensionality x.
+  repeat destruct_both.
+Qed.
+
+Lemma insert_relate_right: forall {A:Type} k0 (a b: total_map A) k v,
+    k0 < k ->
+    t_update (combine k0 a b) (Id k) v = combine k0 a (t_update b (Id k) v).
+Proof.
+  intros. unfold t_update, combine.
+  extensionality x.
+  repeat destruct_both.
+Qed.
+
+Hint Constructors Abs.
 Theorem insert_relate:
  forall k v t cts,
     Abs t cts ->
     Abs (insert k v t) (t_update cts (Id k) v).
 Proof.
-(* FILL IN HERE *) Admitted.
+  induction t; intros; inversion H; subst; simpl.
+  + erewrite combine_t_empty.
+    constructor; auto.
+  + repeat find_if_bdestruct.
+    - rewrite t_update_permute; [ | intros neq; inv neq; omega].
+      rewrite insert_relate_left; auto.
+    - rewrite t_update_permute; [ | intros neq; inv neq; omega].
+      rewrite insert_relate_right; auto.
+    - assert (k = k0). apply Nat.le_antisymm; omega.
+      subst.
+      rewrite t_update_shadow.
+      constructor; auto.
+Qed.
 (** [] *)
 
 (* ################################################################# *)
