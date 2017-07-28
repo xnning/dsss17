@@ -475,7 +475,21 @@ split.
       In all 3 goals, when you need to unfold local definitions such
       as [bogus] you can use [unfold bogus] or [subst bogus].  *)
 
-(* FILL IN HERE *) Admitted.
+  - assert (m = m').
+      unfold m, m'. extensionality x.
+      unfold t_update, combine. simpl.
+      repeat destruct_both.
+      do 4 (destruct n; simpl; auto). omega.
+    rewrite H1.
+    apply H0. unfold bogus, m'. auto.
+  - intro.
+    assert (list2map (elements bogus) (Id 3) <> m (Id 3)).
+      unfold bogus, elements, list2map, m, t_update.
+      simpl. auto.
+    congruence.
+
+  - destruct Paradox. contradiction.
+Qed.
 (** [] *)
 
 (** What went wrong?  Clearly, [elements_relate] is true; you just
@@ -588,7 +602,14 @@ Proof.
 extensionality s.
 unfold elements.
 assert (forall base, elements' s base = slow_elements s ++ base).
-(* FILL IN HERE *) Admitted.
+  induction s; intros; simpl; auto.
+  rewrite IHs1.
+  rewrite IHs2.
+  rewrite <- app_assoc.
+  rewrite <- app_comm_cons. auto.
+specialize (H nil).
+rewrite app_nil_r in H; auto.
+Qed.
 (** [] *)
 
 
@@ -599,7 +620,18 @@ Lemma slow_elements_range:
   In (k,v) (slow_elements t) ->
   lo <= k < hi.
 Proof.
-(* FILL IN HERE *) Admitted.
+  induction 1; intros; simpl in *.
+  - inv H0.
+  - apply SearchTree'_le in H.
+    apply SearchTree'_le in H0.
+    apply in_app_or in H1.
+    destruct H1 as [inl | inr].
+    apply IHSearchTree'1 in inl. omega.
+    apply in_inv in inr.
+    destruct inr as [eq | inr].
+    inv eq. omega.
+    apply IHSearchTree'2 in inr. omega.
+Qed.
 (** [] *)
 
 (* ================================================================= *)
@@ -702,8 +734,26 @@ unfold combine, t_update, beq_id.
 bdestruct (k=?i); [ omega | ].
 bdestruct (i<?k); [ | omega].
 auto.
-(* FILL IN HERE *) Admitted.
-(** [] *)   
+
+rewrite list2map_app_right; auto.
+unfold combine, t_update, beq_id.
+bdestruct (k =? i).
+subst. cbn. rewrite t_update_eq. auto.
+destruct (In_decidable (slow_elements r) i)  as [[w ?] | Hright].
+- pose proof (slow_elements_range _ _ _ _ _ H0_0 H0).
+  repeat find_if_bdestruct; try omega; auto.
+  cbn. rewrite t_update_neq; auto.
+  intro. inv H3. omega.
+- rewrite list2map_not_in_default; auto.
+  repeat find_if_bdestruct; rewrite list2map_not_in_default; auto.
+  intro. inversion H0.
+  apply in_app_or in H1.
+  destruct H1 as [inl | inr].
+  inv inl; inv H1; auto.
+  apply Hright.
+  eexists. exact inr.
+Qed.
+(** [] *)
 
 (* ################################################################# *)
 (** * Preservation of representation invariant *)
@@ -721,7 +771,9 @@ Proof.
 clear default.  (* This is here to avoid a nasty interaction between Admitted
    and Section/Variable.  It's also a hint that the [default] value
    is not needed in this theorem. *)
-(* FILL IN HERE *) Admitted.
+apply ST_intro with (S O).
+constructor; omega.
+Qed.
 (** [] *)
 
 Remark omega_on_keys:
@@ -740,12 +792,52 @@ omega.
 Qed.
 
 (** **** Exercise: 3 stars (insert_SearchTree)  *)
+
+Ltac destruct_key :=
+  match goal with
+  | [ x: key |- _] => unfold key in *
+  end.
+
+Ltac destruct_key_omega :=
+  repeat destruct_key; omega.
+
 Theorem insert_SearchTree:
   forall k v t, 
    SearchTree t -> SearchTree (insert k v t).
 Proof.
 clear default. (* This is here to avoid a nasty interaction between Admitted and Section/Variable *)
-(* FILL IN HERE *) Admitted.
+intros.
+inv H.
+
+bdestruct (k >=? hi).
+- apply ST_intro with (S k).
+  revert H0. generalize 0.
+  induction t; intros; simpl.
+  + pose proof (SearchTree'_le _ _ _ H0).
+    constructor; constructor; try omega.
+  + inv H0.
+    pose proof (SearchTree'_le _ _ _ H7).
+    pose proof (SearchTree'_le _ _ _ H8).
+    repeat find_if_bdestruct; try omega.
+    apply ST_T; auto.
+
+- apply ST_intro with hi.
+  assert (k >= O) by destruct_key_omega.
+  revert H0 H H1.
+  generalize 0 hi.
+  induction t; intros; simpl.
+  + pose proof (SearchTree'_le _ _ _ H0).
+    constructor; constructor; try omega.
+  + inv H0.
+    pose proof (SearchTree'_le _ _ _ H8).
+    pose proof (SearchTree'_le _ _ _ H9).
+    repeat find_if_bdestruct; try destruct_key_omega.
+    apply ST_T; auto.
+    apply ST_T; auto.
+    assert (k = k0) by destruct_key_omega.
+    subst.
+    apply ST_T; auto.
+Qed.
 (** [] *)
 
 (* ################################################################# *)
@@ -856,7 +948,15 @@ Qed.
 Lemma can_relate:
  forall t,  SearchTree t -> exists cts, Abs t cts.
 Proof.
-(* FILL IN HERE *) Admitted.
+  intros. inv H.
+  revert H0. generalize 0 hi.
+  induction t; intros.
+  - eexists; eauto.
+  - inv H0.
+    destruct (IHt1 _ _ H6) as (cst1 & I1).
+    destruct (IHt2 _ _ H7) as (cst2 & I2).
+    eexists. econstructor; eauto.
+Qed.
 (** [] *)
 
 (** Now, because we happen to have a super-strong abstraction relation, that
@@ -866,7 +966,12 @@ Proof.
 Lemma unrealistically_strong_can_relate:
  forall t,  exists cts, Abs t cts.
 Proof.
-(* FILL IN HERE *) Admitted.
+  induction t.
+  - eexists; eauto.
+  - destruct IHt1 as (cst1 & I1).
+    destruct IHt2 as (cst2 & I2).
+    eexists. econstructor; eauto.
+Qed.
 (** [] *)
 
 (* ################################################################# *)
