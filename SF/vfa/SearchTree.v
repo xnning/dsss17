@@ -1051,7 +1051,31 @@ rewrite elements_slow_elements.
    [list2map_not_in_default], [slow_elements_range].  The point is,
    it's not very pretty. *)
 
-(* FILL IN HERE *) Admitted.
+induction H0; simpl.
+- rewrite t_apply_empty; auto.
+- repeat find_if_bdestruct.
+  + rewrite IHSearchTree'1.
+    destruct (In_decidable (slow_elements l) k)  as [[w ?] | Hleft].
+      erewrite list2map_app_left; eauto.
+      rewrite list2map_app_right; auto.
+        cbn. rewrite t_update_neq.
+          destruct (In_decidable (slow_elements r) k)  as [[w ?] | Hright].
+            pose proof slow_elements_range _ _ _ _ _ H0_0 H0. omega.
+            repeat rewrite list2map_not_in_default; auto.
+          intro. inv H0. omega.
+  + rewrite IHSearchTree'2.
+    destruct (In_decidable (slow_elements l) k)  as [[w ?] | Hleft].
+      pose proof slow_elements_range _ _ _ _ _ H0_ H1. omega.
+      rewrite list2map_app_right; auto.
+        cbn. rewrite t_update_neq; auto.
+          intro. inv H1; omega.
+  + assert (k0 = k) by destruct_key_omega.
+    subst.
+    destruct (In_decidable (slow_elements l) k)  as [[w ?] | Hleft].
+      pose proof slow_elements_range _ _ _ _ _ H0_ H1. omega.
+      rewrite list2map_app_right; auto.
+        cbn. rewrite t_update_eq; auto.
+Qed.
 (** [] *)
 
 (* ================================================================= *)
